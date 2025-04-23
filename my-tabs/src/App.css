@@ -1,0 +1,124 @@
+#root {
+  --darkGrey: #7f858d;
+  --lightGrey: #f4f7f9;
+  --white: white;
+  --textColor: #343434;
+  --red: #ee3f3e;
+  --blue: #4690e2;
+  --borderBottom: #aeb6ce;
+}
+
+.wrapperTabs,
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.2rem 0.3rem;
+}
+
+.tab {
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tab,
+.pinned {
+  height: 3rem;
+}
+
+.tabClosed {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #7f858d;
+  color: var(--white);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.tabClosed,
+.dropdownBtn {
+  border: none;
+}
+
+.tabClosed:hover,
+.tab:hover .tabClosed {
+  background-color: var(--red);
+}
+
+a,
+.pinned > span {
+  color: var(--darkGrey);
+}
+
+.tab:hover {
+  position: relative;
+}
+
+a:hover,
+.tab:hover,
+.tab:hover a {
+  color: var(--textColor);
+  background-color: var(--lightGrey);
+}
+
+.pinned {
+  display: none;
+  background-color: var(--white);
+}
+
+.pinned > img {
+  padding: 0rem 0.6rem;
+  vertical-align: middle;
+}
+
+.tab:hover .pinned {
+  display: block;
+  position: absolute;
+  top: 3rem;
+  right: -4rem;
+}
+
+.activeTab {
+  border-top: 2px solid var(--blue);
+}
+
+.dropdownBtn {
+  background-color: var(--blue);
+  width: 2.25rem;
+  height: 3rem;
+  color: var(--white);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 3rem;
+  right: 0rem;
+  background-color: var(--white);
+  max-width: 225px;
+  width: 100%;
+
+  box-shadow: 0 1px 2px #aeb6ce, 0 2px 4px #e9e9e9, 0 4px 6px #7f858d,
+    0 6px 8px #ffffff, 0 8px 10px #343434;
+}
+
+.dropdownMenu .pinned {
+  left: 0rem;
+  right: 0rem;
+  width: 10rem;
+  text-align: center;
+  height: 2rem;
+  transform: translateX(10%);
+}
+
+.dropdownMenu .tab {
+  border-bottom: 1px solid var(--borderBottom);
+}
+
+.dropdownMenu .tab {
+  justify-content: flex-start;
+}
+
+.dropdownMenu .tabClosed {
+  margin-left: auto;
+}
