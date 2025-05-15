@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
 import uuid4 from "uuid4";
@@ -19,8 +19,24 @@ import fourteen from "./assets/14.png";
 import fifteen from "./assets/15.png";
 import sixteen from "./assets/16.png";
 import seventeen from "./assets/17.png";
-import eightteen from "./assets/18.png";
+import eighteen from "./assets/18.png";
 import pin from "./assets/pin.png";
+
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  TouchSensor,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const allTabs = [
   {
@@ -114,7 +130,7 @@ const allTabs = [
   },
   {
     id: uuid4(),
-    img: eightteen,
+    img: eighteen,
     pinned: false,
     url: "/tab18",
     content: "Telefonie",
@@ -170,92 +186,120 @@ function App() {
     setVisibleDropdown(!visibleDropdown);
   }
 
-  const dragItem = useRef(null);
-  const dragOverItem = useRef(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        distance: 0,
+      },
+    })
+  );
 
-  const handleSort = () => {
-    const dragItemIndex = tabs.findIndex((tab) => tab.id === dragItem.current);
-    const dragOverItemIndex = tabs.findIndex(
-      (tab) => tab.id === dragOverItem.current
+  function SortableTab({ tab, path, handleDeleteButton, handlePinnedTab }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: tab.id });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      outline: isDragging ? "2px solid #ee3f3e" : "",
+    };
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className={`tab ${path === tab.url ? "activeTab" : ""}`}
+      >
+        <img src={tab.img} alt="tab icon" />
+        <a href={tab.url}>{tab.content}</a>
+        <button
+          className="tabClosed"
+          onClick={() => handleDeleteButton(tab.id)}
+        >
+          x
+        </button>
+        <div className="pinned" onClick={() => handlePinnedTab(tab.id)}>
+          <img src={pin} alt="pin icon" />
+          <span>{tab.pinned ? "Tab pinnen" : "Tab anpinnen"}</span>
+        </div>
+      </div>
     );
+  }
 
-    const updatedTabs = [...tabs];
-    const draggedTab = updatedTabs.splice(dragItemIndex, 1)[0];
-    updatedTabs.splice(dragOverItemIndex, 0, draggedTab);
-    dragItem.current = null;
-    dragOverItem.current = null;
-    setTabs(updatedTabs);
-  };
+  function handleDragEnd(e) {
+    const { active, over } = e;
+    if (!over) return;
+    if (active.id !== over.id) {
+      const oldIndex = tabs.findIndex((tab) => tab.id === active.id);
+      const newIndex = tabs.findIndex((tab) => tab.id === over.id);
+      setTabs((tabs) => arrayMove(tabs, oldIndex, newIndex));
+    }
+  }
 
   return (
     <>
       <div className="wrapperTabs">
-        {visibleTabs.map((tab) => {
-          return (
-            <div
-              key={tab.id}
-              className={`tab ${path === tab.url ? "activeTab" : ""}`}
-              draggable
-              onDragStart={() => (dragItem.current = tab.id)}
-              onDragEnter={() => (dragOverItem.current = tab.id)}
-              onDragOver={(e) => e.preventDefault()}
-              onDragEnd={handleSort}
-            >
-              <img src={tab.img} alt="tab icon" />
-              <a href={tab.url}>{tab.content}</a>
-              <button
-                className="tabClosed"
-                onClick={() => handleDeleteButton(tab.id)}
-              >
-                x
-              </button>
-              <div className="pinned" onClick={() => handlePinnedTab(tab.id)}>
-                <img src={pin} alt="pin icon" />
-                <span>{tab.pinned ? "Tab pinnen" : "Tab anpinnen"}</span>
-              </div>
-            </div>
-          );
-        })}
-        {tabs.length > visibleTabs.length ? (
-          <button className="dropdownBtn" onClick={handleDropdown}>
-            ^
-          </button>
-        ) : null}
-
-        {visibleDropdown ? (
-          <div className="dropdownMenu">
-            {" "}
-            {tabs.slice(visibleTabs.length).map((tab) => {
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={visibleTabs.map((tab) => tab.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {visibleTabs.map((tab) => {
               return (
-                <div
+                <SortableTab
                   key={tab.id}
-                  className={`tab ${path === tab.url ? "activeTab" : ""}`}
-                  draggable
-                  onDragStart={() => (dragItem.current = tab.id)}
-                  onDragEnter={() => (dragOverItem.current = tab.id)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDragEnd={handleSort}
-                >
-                  <img src={tab.img} alt="tab icon" />
-                  <a href={tab.url}>{tab.content}</a>
-                  <button
-                    className="tabClosed"
-                    onClick={() => handleDeleteButton(tab.id)}
-                  >
-                    x
-                  </button>
-                  <div
-                    className="pinned"
-                    onClick={() => handlePinnedTab(tab.id)}
-                  >
-                    <img src={pin} alt="pin icon" />
-                    <span>{tab.pinned ? "Tab pinnen" : "Tab anpinnen"}</span>
-                  </div>
-                </div>
+                  tab={tab}
+                  path={path}
+                  handleDeleteButton={handleDeleteButton}
+                  handlePinnedTab={handlePinnedTab}
+                />
               );
-            })}{" "}
-          </div>
-        ) : null}
+            })}
+          </SortableContext>
+
+          {tabs.length > visibleTabs.length ? (
+            <button className="dropdownBtn" onClick={handleDropdown}>
+              ^
+            </button>
+          ) : null}
+
+          {visibleDropdown ? (
+            <div className="dropdownMenu">
+              {" "}
+              <SortableContext
+                items={tabs.slice(visibleTabs.length).map((tab) => tab.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {tabs.slice(visibleTabs.length).map((tab) => {
+                  return (
+                    <SortableTab
+                      key={tab.id}
+                      tab={tab}
+                      path={path}
+                      handleDeleteButton={handleDeleteButton}
+                      handlePinnedTab={handlePinnedTab}
+                    />
+                  );
+                })}
+              </SortableContext>{" "}
+            </div>
+          ) : null}
+        </DndContext>
       </div>
     </>
   );
